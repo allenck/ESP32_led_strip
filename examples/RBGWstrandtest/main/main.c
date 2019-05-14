@@ -14,7 +14,7 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
-#include "led_strip/led_strip.h"
+#include "led_strip.h"
 
 #include <stdio.h>
 #include <time.h>

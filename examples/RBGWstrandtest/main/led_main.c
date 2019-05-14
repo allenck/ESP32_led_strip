@@ -3,7 +3,7 @@
 
  #include <stdio.h>
 
-#include "led_strip/led_strip.h"
+#include "led_strip.h"
 
 #define LED_STRIP_LENGTH 22U
 #define LED_STRIP_RMT_INTR_NUM 19U

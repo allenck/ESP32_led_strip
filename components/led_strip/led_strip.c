@@ -13,7 +13,7 @@
     and the task will look at buffer 2 for refreshing the LEDs
     ------------------------------------------------------------------------- */
 
-#include "led_strip/led_strip.h"
+#include "led_strip.h"
 #include "freertos/task.h"
 
 #include <string.h>
