@@ -22,11 +22,11 @@
 
 #define TAG "main:"
 
-#define LED_STRIP_LENGTH 22U
+#define LED_STRIP_LENGTH CONFIG_LED_STRIP_NUM_PIXELS //22U
 static struct led_color_t led_strip_buf_1[LED_STRIP_LENGTH];
 static struct led_color_t led_strip_buf_2[LED_STRIP_LENGTH];
 
-#define LED_STRIP_RMT_INTR_NUM 19
+//#define LED_STRIP_RMT_INTR_NUM 19
 void loop(struct led_strip_t* led_strip);
 void colorWipe(struct led_strip_t* led_strip, struct led_color_t* color, int wait);
 void whiteOverRainbow(struct led_strip_t* led_strip, int whiteSpeed, int whiteLength);
@@ -41,8 +41,8 @@ int app_main(void)
      struct led_strip_t led_strip = {
         .rgb_led_type = RGB_LED_TYPE_WS2812,
         .rmt_channel = RMT_CHANNEL_1,
-        .rmt_interrupt_num = LED_STRIP_RMT_INTR_NUM,
-        .gpio = GPIO_NUM_22,
+        /*.rmt_interrupt_num = LED_STRIP_RMT_INTR_NUM,*/
+        .gpio = CONFIG_LED_STRIP_GPIO_PIN,
         .led_strip_buf_1 = led_strip_buf_1,
         .led_strip_buf_2 = led_strip_buf_2,
         .led_strip_length = LED_STRIP_LENGTH

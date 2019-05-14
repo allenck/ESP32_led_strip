@@ -102,7 +102,7 @@ struct led_strip_t {
      * Ensure that the same interrupt number isn't used twice
      * across all libraries
      */
-    int rmt_interrupt_num;
+    //int rmt_interrupt_num;
 
     gpio_num_t gpio; // Must be less than GPIO_NUM_33
 
