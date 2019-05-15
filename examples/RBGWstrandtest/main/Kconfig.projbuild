@@ -1,4 +1,4 @@
-menu "ESP32_snow led_strip Configuration"
+menu "ESP32_led_strip RBGWstrandtest Configuration"
 
 config LED_STRIP_GPIO_PIN
     int "Pin controlling LED strip"
@@ -8,14 +8,14 @@ config LED_STRIP_GPIO_PIN
         Select LED pin or -1 for unmanaged.
 
 config LED_STRIP_NUM_PIXELS
-		int "Pin controlling LED strip"
+		int "Number of LEDs in strand"
     range 0 255
     default 5
     help
         Select number of pixels in strand.
 
 config RMT_CHANNEL
-int "Pin controlling LED strip"
+int "Remote Control (RMT) Channel number"
     range 0 7
     default 1
     help

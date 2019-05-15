@@ -77,6 +77,7 @@ int app_main(void)
 
 void loop(struct led_strip_t* led_strip) {
   // Fill along the length of the strip in various colors...
+#if 0
   struct led_color_t r = { .red = 255, .green = 0, .blue = 0};
   colorWipe(led_strip, &r, 50); // Red
   struct led_color_t g = { .red = 0, .green = 255, .blue = 0};
@@ -87,11 +88,11 @@ void loop(struct led_strip_t* led_strip) {
   colorWipe(led_strip, &w, 50); // True white (not RGB white)
 
   whiteOverRainbow(led_strip, 75, 5);
-
+#endif
   pulseWhite(led_strip, 5);
-
+#if 0
   rainbowFade2White(led_strip, 3, 3, 1);
-
+#endif
 }
 
 // Fill strip pixels one after another with a color. Strip is NOT cleared
@@ -164,18 +165,17 @@ void pulseWhite(struct led_strip_t* led_strip, uint8_t wait) {
   ESP_LOGI(TAG, "begin pulseWhite");
   for(int j=0; j<256; j++) { // Ramp up from 0 to 255
     // Fill entire strip with white at gamma-corrected brightness level 'j':
-    struct led_color_t c = { .white = gamma8(j)};
-    fill(led_strip, &c,0,0);
+    fill(led_strip, Color(gamma8(j),gamma8(j),gamma8(j),0),0,0);
     led_strip_show(led_strip);
     vTaskDelay(wait);
   }
-
+  ESP_LOGI(TAG, "ramp down pulseWhite");
   for(int j=255; j>=0; j--) { // Ramp down from 255 to 0
-    struct led_color_t c = { .white = gamma8(j)};
-    fill(led_strip, &c,0,0);
+        fill(led_strip, Color(gamma8(j),gamma8(j),gamma8(j),0),0,0);
     led_strip_show(led_strip);
     vTaskDelay(wait);
   }
+  ESP_LOGI(TAG, "end pulseWhite");
 }
 
 void rainbowFade2White(struct led_strip_t* led_strip, int wait, int rainbowLoops, int whiteLoops) {

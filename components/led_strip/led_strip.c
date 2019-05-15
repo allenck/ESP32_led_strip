@@ -356,7 +356,8 @@ bool led_strip_clear(struct led_strip_t *led_strip)
              need to provide your own gamma-correction function instead.
   */
 uint8_t    gamma8(uint8_t x) {
-    return /*pgm_read_byte*/(&_NeoPixelGammaTable[x]); // 0-255 in, 0-255 out
+    //ESP_LOGI(TAG, "gamma in = %d, out = %d", (int)x, (int)(_NeoPixelGammaTable[x]));
+    return /*pgm_read_byte*/(_NeoPixelGammaTable[x]); // 0-255 in, 0-255 out
 }
 
 /*!
@@ -403,9 +404,10 @@ void fill(struct led_strip_t *led_strip, uint32_t c, uint16_t first, uint16_t co
     if(end > led_strip->led_strip_length) end = led_strip->led_strip_length;
   }
 
-  struct led_color_t t = { .red = (c&0xff0000)>>16, .green = (c&0xff00)>>8, .blue = (c&0xff), .white = (c&0xff000000)>>24};
+  
   for(i = first; i < end; i++) {
-    led_strip_set_pixel_color(led_strip, i, &t);
+    struct led_color_t t = { .red = (c&0xff0000)>>16, .green = (c&0xff00)>>8, .blue = (c&0xff), .white = (c&0xff000000)>>24};
+   led_strip_set_pixel_color(led_strip, i, &t);
   }
 }
 
