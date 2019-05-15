@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ESP32_SNOW_3D_SHOW
+PROJECT_NAME := RGBWstrandtestCpp
 
 
 a:=$(shell pwd)

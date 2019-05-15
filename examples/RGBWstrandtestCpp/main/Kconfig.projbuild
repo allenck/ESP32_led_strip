@@ -1,0 +1,24 @@
+menu "ESP32_led_strip RBGWstrandtest Configuration"
+
+config LED_STRIP_GPIO_PIN
+    int "Pin controlling LED strip"
+    range -1 33
+    default 5
+    help
+        Select LED pin or -1 for unmanaged.
+
+config LED_STRIP_NUM_PIXELS
+		int "Number of LEDs in strand"
+    range 0 255
+    default 5
+    help
+        Select number of pixels in strand.
+
+config RMT_CHANNEL
+int "Remote Control (RMT) Channel number"
+    range 0 7
+    default 1
+    help
+        Select ESP32 RMT channel number.
+
+endmenu

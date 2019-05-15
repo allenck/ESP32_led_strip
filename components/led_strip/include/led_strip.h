@@ -167,5 +167,5 @@ uint32_t ColorHSV(uint16_t hue, uint8_t sat/*=255*/, uint8_t val/*=255*/);
   */
 uint32_t gamma32(uint32_t x);
 
-uint8_t brightness; ///< Strip brightness 0-255 (stored as +1)
+//uint8_t brightness; ///< Strip brightness 0-255 (stored as +1)
 #endif // LED_STRIP_H
