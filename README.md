@@ -53,9 +53,8 @@ static struct led_color_t led_strip_buf_1[LED_STRIP_LENGTH];
 static struct led_color_t led_strip_buf_2[LED_STRIP_LENGTH];
 
 struct led_strip_t led_strip = {
-    .rgb_led_type = RGB_LED_TYPE_WS2812,
+    .rgb_led_type = NEO_GRB, // see led_strip.h for values; pick the one that displays the correct color.
     .rmt_channel = RMT_CHANNEL_1,
-    .rmt_interrupt_num = LED_STRIP_RMT_INTR_NUM,
     .gpio = GPIO_NUM_21,
     .led_strip_buf_1 = led_strip_buf_1,
     .led_strip_buf_2 = led_strip_buf_2,
