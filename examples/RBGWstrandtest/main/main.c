@@ -88,7 +88,7 @@ void loop(struct led_strip_t* led_strip) {
   colorWipe(led_strip, &g, 50); // Green
   struct led_color_t b = { .red = 0, .green = 0, .blue = 255};
   colorWipe(led_strip, &b, 50); // Blue
-  if(led_strip->rOffset |= led_strip->wOffset)
+  if(led_strip->rOffset != led_strip->wOffset)
   {
 		struct led_color_t w = { .red = 0, .green = 0, .blue = 0, .white = 255};
 		colorWipe(led_strip, &w, 50); // True white (not RGB white)
@@ -110,9 +110,9 @@ void loop(struct led_strip_t* led_strip) {
 void colorWipe(struct led_strip_t* led_strip, struct led_color_t* color, int wait) {
   ESP_LOGI(TAG, "begin colorWipe %d,%d,%d,%d", color->red, color->green, color->blue, color->white);
   for(int i=0; i<LED_STRIP_LENGTH; i++) { // For each pixel in strip...
-    led_strip_set_pixel_color(led_strip, i, color);         //  Set pixel's color (in RAM)
-    led_strip_show(led_strip);                          //  Update strip to match
-    vTaskDelay(wait);                           //  Pause for a moment
+		led_strip_set_pixel_color(led_strip, i, color); //  Set pixel's color (in RAM)
+    led_strip_show(led_strip);                      //  Update strip to match
+    vTaskDelay(wait);                               //  Pause for a moment
   }
 }
 

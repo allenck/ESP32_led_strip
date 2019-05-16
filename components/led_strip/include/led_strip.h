@@ -269,4 +269,9 @@ uint32_t gamma32(uint32_t x);
 //uint8_t brightness; ///< Strip brightness 0-255 (stored as +1)
 
 void main_led_task(void *args);
+/*
+ * clear buffer after show
+ * if true, the buffer will be cleared after led_strip_show() is called.
+ */
+bool bClearOnShow;
 #endif // LED_STRIP_H
