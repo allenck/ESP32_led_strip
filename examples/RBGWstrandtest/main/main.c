@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <time.h>
+
 #include "esp_log.h"
 
 #define TAG "main:"
@@ -39,7 +40,7 @@ int app_main(void)
     //nvs_flash_in;
 
      struct led_strip_t led_strip = {
-        .rgb_led_type = RGB_LED_TYPE_WS2812,
+        .rgb_led_type = NEO_RGB,
         .rmt_channel = RMT_CHANNEL_1,
         /*.rmt_interrupt_num = LED_STRIP_RMT_INTR_NUM,*/
         .gpio = CONFIG_LED_STRIP_GPIO_PIN,
@@ -58,8 +59,9 @@ int app_main(void)
         .blue = 0,
     };
 
-#if 0
+
     while (true) {
+#if 0
         for (uint32_t index = 0; index < LED_STRIP_LENGTH; index++) {
             led_strip_set_pixel_color(&led_strip, index, &led_color);
         }
@@ -67,30 +69,35 @@ int app_main(void)
 
         led_color.red += 5;
         vTaskDelay(30 / portTICK_PERIOD_MS);
-}
 #else
-    loop(&led_strip);
+			loop(&led_strip);
 #endif
-
+		}
     return 0;
 }
 
 void loop(struct led_strip_t* led_strip) {
   // Fill along the length of the strip in various colors...
-#if 0
-  struct led_color_t r = { .red = 255, .green = 0, .blue = 0};
+  ESP_LOGI(TAG, "begin loop");
+
+  struct led_color_t r = {.white = 0, .red = 255, .green = 0, .blue = 0};
   colorWipe(led_strip, &r, 50); // Red
+  ESP_LOG_BUFFER_HEXDUMP("buf1", led_strip->led_strip_buf_1, sizeof(led_strip->led_strip_buf_1), ESP_LOG_DEBUG);
+
   struct led_color_t g = { .red = 0, .green = 255, .blue = 0};
   colorWipe(led_strip, &g, 50); // Green
   struct led_color_t b = { .red = 0, .green = 0, .blue = 255};
   colorWipe(led_strip, &b, 50); // Blue
-  struct led_color_t w = { .red = 0, .green = 0, .blue = 0, .white = 255};
-  colorWipe(led_strip, &w, 50); // True white (not RGB white)
-
+  if(led_strip->rOffset |= led_strip->wOffset)
+  {
+		struct led_color_t w = { .red = 0, .green = 0, .blue = 0, .white = 255};
+		colorWipe(led_strip, &w, 50); // True white (not RGB white)
+	}
+#if 1
   whiteOverRainbow(led_strip, 75, 5);
-#endif
+//#endif
   pulseWhite(led_strip, 5);
-#if 0
+//#if 0
   rainbowFade2White(led_strip, 3, 3, 1);
 #endif
 }
@@ -144,7 +151,7 @@ void whiteOverRainbow(struct led_strip_t* led_strip, int whiteSpeed, int whiteLe
     // counter combination below runs out.
 
     firstPixelHue += 40; // Advance just a little along the color wheel
-    ESP_LOGI(TAG, "loop time = %u",(uint16_t)(millis() - lastTime));
+    ESP_LOGD(TAG, "loop time = %u",(uint16_t)(millis() - lastTime));
     if(((uint32_t)time(NULL) - lastTime) > whiteSpeed) 
     { // Time to update head/tail?
       if(++head >= led_strip->led_strip_length) 

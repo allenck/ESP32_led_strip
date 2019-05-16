@@ -1,7 +1,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
- #include <stdio.h>
+#include <stdio.h>
 
 #include "led_strip.h"
 
@@ -18,7 +18,7 @@ static struct led_color_t led_strip_buf_2[LED_STRIP_LENGTH];
 void main_led_task(void *args)
 {
 	struct led_strip_t led_strip = {
-	    rgb_led_type : RGB_LED_TYPE_WS2812,
+	    rgb_led_type : NEO_GRB,
       led_strip_length : CONFIG_LED_STRIP_NUM_PIXELS, //LED_STRIP_LENGTH,
 	    rmt_channel : CONFIG_RMT_CHANNEL, //RMT_CHANNEL_0,
 	    /*rmt_interrupt_num : LED_STRIP_RMT_INTR_NUM,*/

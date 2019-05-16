@@ -46,7 +46,7 @@ clock_t millis()
 }
 
 // Function pointer for generating waveforms based on different LED drivers
-typedef void (*led_fill_rmt_items_fn)(struct led_color_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length);
+typedef void (*led_fill_rmt_items_fn)(struct led_color_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset);
 
 static inline void led_strip_fill_item_level(rmt_item32_t* item, int high_ticks, int low_ticks)
 {
@@ -66,14 +66,16 @@ static inline void led_strip_rmt_bit_0_ws2812(rmt_item32_t* item)
     led_strip_fill_item_level(item, LED_STRIP_RMT_TICKS_BIT_0_HIGH_WS2812, LED_STRIP_RMT_TICKS_BIT_0_LOW_WS2812);
 }
 
-static void led_strip_fill_rmt_items_ws2812(struct led_color_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length)
+static void led_strip_fill_rmt_items_ws2812(struct led_color_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset)
 {
     uint32_t rmt_items_index = 0;
+    
+    
     for (uint32_t led_index = 0; led_index < led_strip_length; led_index++) {
         struct led_color_t led_color = led_strip_buf[led_index];
-
+        uint8_t bytes[4]= {led_color.red, led_color.green, led_color.blue, led_color.white};
         for (uint8_t bit = 8; bit != 0; bit--) {
-            uint8_t bit_set = (led_color.green >> (bit - 1)) & 1;
+            uint8_t bit_set = (bytes[wOffset] >> (bit - 1)) & 1;
             if(bit_set) {
                 led_strip_rmt_bit_1_ws2812(&(rmt_items[rmt_items_index]));
             } else {
@@ -82,7 +84,7 @@ static void led_strip_fill_rmt_items_ws2812(struct led_color_t *led_strip_buf, r
             rmt_items_index++;
         }
         for (uint8_t bit = 8; bit != 0; bit--) {
-            uint8_t bit_set = (led_color.red >> (bit - 1)) & 1;
+            uint8_t bit_set = (bytes[gOffset] >> (bit - 1)) & 1;
             if(bit_set) {
                 led_strip_rmt_bit_1_ws2812(&(rmt_items[rmt_items_index]));
             } else {
@@ -91,7 +93,7 @@ static void led_strip_fill_rmt_items_ws2812(struct led_color_t *led_strip_buf, r
             rmt_items_index++;
         }
         for (uint8_t bit = 8; bit != 0; bit--) {
-            uint8_t bit_set = (led_color.blue >> (bit - 1)) & 1;
+            uint8_t bit_set = (bytes[bOffset] >> (bit - 1)) & 1;
             if(bit_set) {
                 led_strip_rmt_bit_1_ws2812(&(rmt_items[rmt_items_index]));
             } else {
@@ -99,6 +101,18 @@ static void led_strip_fill_rmt_items_ws2812(struct led_color_t *led_strip_buf, r
             }
             rmt_items_index++;
         }
+        if(wOffset != rOffset)
+        { 
+		      for (uint8_t bit = 8; bit != 0; bit--) {
+		          uint8_t bit_set = (bytes[wOffset] >> (bit - 1)) & 1;
+		          if(bit_set) {
+		              led_strip_rmt_bit_1_ws2812(&(rmt_items[rmt_items_index]));
+		          } else {
+		              led_strip_rmt_bit_0_ws2812(&(rmt_items[rmt_items_index]));
+		          }
+		          rmt_items_index++;
+		      }
+       }
     }
 }
 
@@ -114,7 +128,7 @@ static void led_strip_task(void *arg)
     if (!rmt_items) {
         vTaskDelete(NULL);
     }
-
+#if 0
     switch (led_strip->rgb_led_type) {
         case RGB_LED_TYPE_WS2812:
             led_make_waveform = led_strip_fill_rmt_items_ws2812;
@@ -125,7 +139,9 @@ static void led_strip_task(void *arg)
             led_make_waveform = led_strip_fill_rmt_items_ws2812;
             break;
     };
-
+#else
+		led_make_waveform = led_strip_fill_rmt_items_ws2812;
+#endif
     for(;;) {
         rmt_wait_tx_done(led_strip->rmt_channel, portMAX_DELAY);
         xSemaphoreTake(led_strip->access_semaphore, portMAX_DELAY);
@@ -146,9 +162,11 @@ static void led_strip_task(void *arg)
 
         if (make_new_rmt_items) {
             if (led_strip->showing_buf_1) {
-                led_make_waveform(led_strip->led_strip_buf_1, rmt_items, led_strip->led_strip_length);
+                led_make_waveform(led_strip->led_strip_buf_1, rmt_items, led_strip->led_strip_length,
+									led_strip->wOffset, led_strip->rOffset, led_strip->gOffset,led_strip->bOffset);
             } else {
-                led_make_waveform(led_strip->led_strip_buf_2, rmt_items, led_strip->led_strip_length);
+                led_make_waveform(led_strip->led_strip_buf_2, rmt_items, led_strip->led_strip_length,
+									led_strip->wOffset, led_strip->rOffset, led_strip->gOffset,led_strip->bOffset);
             }
         }
 
@@ -182,18 +200,19 @@ static bool led_strip_init_rmt(struct led_strip_t *led_strip)
             .idle_output_en = true,
         }
     };
-
+    ESP_LOGI(TAG, "rmt_driver_install gpio= %d, channel= %d",rmt_cfg.gpio_num, rmt_cfg.channel);
     esp_err_t cfg_ok = rmt_config(&rmt_cfg);
     if (cfg_ok != ESP_OK) {
       ESP_LOGI(TAG, "rmt_config failed, gpio = %d", rmt_cfg.gpio_num);
         return false;
     }
+#if 1
     esp_err_t install_ok = rmt_driver_install(rmt_cfg.channel, 0, 0);
     if (install_ok != ESP_OK) {
-        ESP_LOGI(TAG, "rmt_driver_install failed, channel = %d, install_ok = %d", rmt_cfg.channel, install_ok);
+        ESP_LOGI(TAG, "rmt_driver_install failed, gpio= %d, channel= %d, error = %s",rmt_cfg.gpio_num, rmt_cfg.channel, esp_err_to_name(install_ok));
      return false;
     }
-
+#endif
     return true;
 }
 
@@ -202,15 +221,22 @@ bool led_strip_init(struct led_strip_t *led_strip)
     TaskHandle_t led_strip_task_handle;
 
     if ((led_strip == NULL) ||
+        (led_strip->rgb_led_type == 0 || led_strip->rgb_led_type > 0x3ff) ||
         (led_strip->rmt_channel == RMT_CHANNEL_MAX) ||
         (led_strip->gpio > GPIO_NUM_33) ||  // only inputs above 33
         (led_strip->led_strip_buf_1 == NULL) ||
         (led_strip->led_strip_buf_2 == NULL) ||
         (led_strip->led_strip_length == 0) ||
         (led_strip->access_semaphore == NULL)) {
-        ESP_LOGI(TAG, "led_strip invalid");
+        ESP_LOGE(TAG, "led_strip invalid, rgb_led_type=%d", led_strip->rgb_led_type);
         return false;
     }
+		// calculate byte order offsets 
+    led_strip->wOffset = (led_strip->rgb_led_type >> 6) & 0b11; // See notes in header file
+    led_strip->rOffset = (led_strip->rgb_led_type >> 4) & 0b11; // regarding R/G/B/W offsets
+  	led_strip->gOffset = (led_strip->rgb_led_type >> 2) & 0b11;
+		led_strip->bOffset = led_strip->rgb_led_type & 0b11;
+    led_strip->hasWhite = (led_strip->rOffset != led_strip->wOffset);
 
     if(led_strip->led_strip_buf_1 == led_strip->led_strip_buf_2) {
      ESP_LOGI(TAG, "led_strip_buf1 invalid");
@@ -329,6 +355,7 @@ bool led_strip_show(struct led_strip_t *led_strip)
  */
 bool led_strip_clear(struct led_strip_t *led_strip)
 {
+		ESP_LOGI(TAG, "begin clear");
     bool success = true;
 
     if (!led_strip) {
@@ -496,8 +523,66 @@ uint32_t gamma32(uint32_t x) {
   // trivial operation, so it might not even be wasting cycles vs a check
   // and branch for the RGB case). In theory this might cause trouble *if*
   // someone's storing information in the unused most significant byte
+
   // of an RGB value, but this seems exceedingly rare and if it's
   // encountered in reality they can mask values going in or coming out.
   for(uint8_t i=0; i<4; i++) y[i] = gamma8(y[i]);
   return x; // Packed 32-bit return
+}
+
+struct led_strip_t* led_strip = NULL;
+
+void main_led_task(void *args)
+{
+
+ struct led_color_t led_strip_buf_1[CONFIG_LED_STRIP_NUM_PIXELS];
+ struct led_color_t led_strip_buf_2[CONFIG_LED_STRIP_NUM_PIXELS];
+ 
+ struct led_strip_t new_led_strip =  {
+	    rgb_led_type : NEO_RGB,
+      led_strip_length : CONFIG_LED_STRIP_NUM_PIXELS, //LED_STRIP_LENGTH,
+	    rmt_channel : (rmt_channel_t)CONFIG_RMT_CHANNEL, //RMT_CHANNEL_0,
+	    /*rmt_interrupt_num : LED_STRIP_RMT_INTR_NUM,*/
+	    gpio : (gpio_num_t)CONFIG_LED_STRIP_GPIO_PIN, //GPIO_NUM_22,
+			showing_buf_1 : false,
+	    led_strip_buf_1 : led_strip_buf_1,
+	    led_strip_buf_2 : led_strip_buf_2
+	};
+  led_strip = &new_led_strip;
+#if 0
+	if(args != NULL)
+  {
+   led_strip = (struct led_strip_t*)args; 
+  }
+#endif
+  //led_strip->led_strip_length = CONFIG_LED_STRIP_NUM_PIXELS;
+  ESP_LOG_BUFFER_HEXDUMP(TAG, led_strip, 160, ESP_LOG_INFO);
+  led_strip->access_semaphore = xSemaphoreCreateBinary();
+  
+
+  bool led_init_ok = led_strip_init(led_strip);
+	assert(led_init_ok);
+
+  struct led_color_t led_color = {
+        white : 0,
+        red : 5,
+        green : 5,
+        blue : 0
+  };
+  while (true) 
+  {
+    ESP_LOGI(TAG, "begin loop");
+        for (uint32_t index = 0; index < led_strip->led_strip_length; index++) {
+            led_strip_set_pixel_color(led_strip, index, &led_color);
+        }
+        ESP_LOG_BUFFER_HEXDUMP("led_strip", led_strip, sizeof(struct led_strip_t), ESP_LOG_INFO);
+        ESP_LOG_BUFFER_HEXDUMP("led_buf_1", led_strip->led_strip_buf_1, sizeof(uint32_t)*led_strip->led_strip_length, ESP_LOG_INFO);
+        ESP_LOG_BUFFER_HEXDUMP("led_buf_2", led_strip->led_strip_buf_2, sizeof(uint32_t)*led_strip->led_strip_length, ESP_LOG_INFO);
+        
+        led_strip_show(led_strip);
+
+        led_color.red += 5;
+        
+        vTaskDelay(30 / portTICK_PERIOD_MS);
+  }
 }
