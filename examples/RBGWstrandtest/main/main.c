@@ -33,7 +33,9 @@ void colorWipe(struct led_strip_t* led_strip, struct led_color_t* color, int wai
 void whiteOverRainbow(struct led_strip_t* led_strip, int whiteSpeed, int whiteLength);
 void pulseWhite(struct led_strip_t* led_strip, uint8_t wait);
 void rainbowFade2White(struct led_strip_t* led_strip, int wait, int rainbowLoops, int whiteLoops);
-
+void theaterChase(struct led_strip_t* led_strip, uint32_t color, int wait);
+void rainbow(struct led_strip_t* led_strip, int wait);
+void theaterChaseRainbow(struct led_strip_t* led_strip, int wait);
 
 int app_main(void)
 {
@@ -52,13 +54,13 @@ int app_main(void)
 
     bool led_init_ok = led_strip_init(&led_strip);
     assert(led_init_ok);
-
+#if 0
     struct led_color_t led_color = {
         .red = 5,
         .green = 0,
         .blue = 0,
     };
-
+#endif
 
     while (true) {
 #if 0
@@ -100,6 +102,13 @@ void loop(struct led_strip_t* led_strip) {
 //#if 0
   rainbowFade2White(led_strip, 3, 3, 1);
 #endif
+  // Do a theater marquee effect in various colors...
+  theaterChase(led_strip, Color(0,127, 127, 127), 50); // White, half brightness
+  theaterChase(led_strip, Color(0, 127, 0, 0), 50); // Red, half brightness
+  theaterChase(led_strip, Color(0, 0, 0, 127), 50); // Blue, half brightness
+
+  rainbow(led_strip, 10);             // Flowing rainbow cycle along the whole strip
+  theaterChaseRainbow(led_strip, 50); // Rainbow-enhanced theaterChase variant
 }
 
 // Fill strip pixels one after another with a color. Strip is NOT cleared
@@ -227,18 +236,86 @@ void rainbowFade2White(struct led_strip_t* led_strip, int wait, int rainbowLoops
   for(int k=0; k<whiteLoops; k++) {
     for(int j=0; j<256; j++) { // Ramp up 0 to 255
       // Fill entire strip with white at gamma-corrected brightness level 'j':
-      struct led_color_t c = { .white = gamma8(j)};
-      fill(led_strip, &c,0,0);
-      led_strip_show(led_strip);;
+ 			fill(led_strip, Color(0,gamma8(j),gamma8(j),gamma8(j)),0,0);
+      led_strip_show(led_strip);
     }
     vTaskDelay(1000); // Pause 1 second
     for(int j=255; j>=0; j--) { // Ramp down 255 to 0
-      struct led_color_t c = { .white = gamma8(j)};
-      fill(led_strip, &c,0,0);
-      led_strip_show(led_strip);;
+      fill(led_strip, Color(0,gamma8(j),gamma8(j),gamma8(j)),0,0);
+      led_strip_show(led_strip);
     }
   }
 
   vTaskDelay(500); // Pause 1/2 second
 }
 
+// Theater-marquee-style chasing lights. Pass in a color (32-bit value,
+// a la strip.Color(r,g,b) as mentioned above), and a delay time (in ms)
+// between frames.
+void theaterChase(struct led_strip_t* led_strip, uint32_t color, int wait) {
+ESP_LOGI(TAG, "begin TheaterChase");
+  for(int a=0; a<10; a++) {  // Repeat 10 times...
+    for(int b=0; b<3; b++) { //  'b' counts from 0 to 2...
+      led_strip_clear(led_strip);         //   Set all pixels in RAM to 0 (off)
+      // 'c' counts up from 'b' to end of strip in steps of 3...
+      for(int c=b; c<led_strip->led_strip_length; c += 3) 
+			{
+				struct led_color_t color_s= { .red = (color&0xff0000)>>16, .green = (color&0xff00)>>8, .blue = (color&0xff), .white = (color&0xff000000)>>24};
+        led_strip_set_pixel_color(led_strip, c, &color_s); // Set pixel 'c' to value 'color'
+      }
+      led_strip_show(led_strip); // Update strip with new contents
+      vTaskDelay(wait);  // Pause for a moment
+    }
+  }
+}
+
+// Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
+void rainbow(struct led_strip_t* led_strip, int wait) {
+  ESP_LOGI(TAG, "begin rainbow");
+  // Hue of first pixel runs 5 complete loops through the color wheel.
+  // Color wheel has a range of 65536 but it's OK if we roll over, so
+  // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
+  // means we'll make 5*65536/256 = 1280 passes through this outer loop:
+  for(long firstPixelHue = 0; firstPixelHue < 5*65536; firstPixelHue += 256) {
+    for(int i=0; i<led_strip->led_strip_length; i++) { // For each pixel in strip...
+      // Offset pixel hue by an amount to make one full revolution of the
+      // color wheel (range of 65536) along the length of the strip
+      // (strip.numPixels() steps):
+      int pixelHue = firstPixelHue + (i * 65536L / led_strip->led_strip_length);
+      // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
+      // optionally add saturation and value (brightness) (each 0 to 255).
+      // Here we're using just the single-argument hue variant. The result
+      // is passed through strip.gamma32() to provide 'truer' colors
+      // before assigning to each pixel:
+			uint32_t color = gamma32(ColorHSV(pixelHue, 255, 255));
+			struct led_color_t color_s= { .red = (color&0xff0000)>>16, .green = (color&0xff00)>>8, .blue = (color&0xff), .white = (color&0xff000000)>>24};
+      led_strip_set_pixel_color(led_strip, i, &color_s);
+    }
+    led_strip_show(led_strip); // Update strip with new contents
+    vTaskDelay(wait);  // Pause for a moment
+  }
+}
+
+// Rainbow-enhanced theater marquee. Pass delay time (in ms) between frames.
+void theaterChaseRainbow(struct led_strip_t* led_strip, int wait) {
+  ESP_LOGI(TAG, "begin theaterChaseRainbow");
+  int firstPixelHue = 0;     // First pixel starts at red (hue 0)
+  for(int a=0; a<30; a++) {  // Repeat 30 times...
+    for(int b=0; b<3; b++) { //  'b' counts from 0 to 2...
+      led_strip_clear(led_strip);         //   Set all pixels in RAM to 0 (off)
+      // 'c' counts up from 'b' to end of strip in increments of 3...
+      for(int c=b; c<led_strip->led_strip_length; c += 3) {
+        // hue of pixel 'c' is offset by an amount to make one full
+        // revolution of the color wheel (range 65536) along the length
+        // of the strip (strip.numPixels() steps):
+        int      hue   = firstPixelHue + c * 65536L / led_strip->led_strip_length;
+        uint32_t color = gamma32(ColorHSV(hue, 255, 255)); // hue -> RGB
+        struct led_color_t color_s= { .red = (color&0xff0000)>>16, .green = (color&0xff00)>>8, .blue = (color&0xff), .white = (color&0xff000000)>>24};
+				led_strip_set_pixel_color(led_strip, c, &color_s); // Set pixel 'c' to value 'color'
+      }
+      led_strip_show(led_strip);                // Update strip with new contents
+      vTaskDelay(wait);                 // Pause for a moment
+      firstPixelHue += 65536 / 90; // One cycle of color wheel over 90 frames
+    }
+  }
+}

@@ -125,6 +125,7 @@ struct led_color_t {
     uint8_t blue;
  }; 
 
+
 // These two tables are declared outside the Adafruit_NeoPixel class
 // because some boards may require oldschool compilers that don't
 // handle the C++11 constexpr keyword.

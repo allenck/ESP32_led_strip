@@ -364,7 +364,7 @@ bool led_strip_show(struct led_strip_t *led_strip)
  */
 bool led_strip_clear(struct led_strip_t *led_strip)
 {
-		ESP_LOGI(TAG, "begin clear");
+		ESP_LOGD(TAG, "begin clear");
     bool success = true;
 
     if (!led_strip) {
