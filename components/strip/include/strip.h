@@ -147,6 +147,7 @@ static const uint8_t /*PROGMEM*/ _NeoPixelGammaTable[256] = {
   218,220,223,225,227,230,232,235,237,240,242,245,247,250,252,255};
 clock_t millis();
 inline void delay(uint32_t d) { vTaskDelay(d / portTICK_PERIOD_MS);}
+void loop();
 
 // Function pointer for generating waveforms based on different LED drivers
 	typedef void (*led_fill_rmt_items_fn)(uint32_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset);

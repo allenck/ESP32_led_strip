@@ -94,6 +94,10 @@ bool Strip::begin()
   ESP_LOG_BUFFER_HEXDUMP("begin(e) buf1", buf1, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
   ESP_LOG_BUFFER_HEXDUMP("begin(e) buf2", buf2, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
 
+	while(true)
+  {
+   loop();
+  }
   ESP_LOGI(TAG, "begin end");
   return true;
 }
@@ -333,7 +337,7 @@ bool Strip::getPixelColor(uint32_t pixel_num, uint32_t color)
 
     if ((pixel_num > _numPixels) ||
         (!color)) {
-        color = NULL;
+        color = 0;
         return false;
     }
 
