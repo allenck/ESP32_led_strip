@@ -53,26 +53,10 @@ int app_main(void)
 
     bool led_init_ok = led_strip_init(&led_strip);
     assert(led_init_ok);
-#if 0
-    struct led_color_t led_color = {
-        .red = 5,
-        .green = 0,
-        .blue = 0,
-    };
-#endif
 
     while (true) {
-#if 0
-        for (uint32_t index = 0; index < LED_STRIP_LENGTH; index++) {
-            led_strip_set_pixel_color(&led_strip, index, &led_color);
-        }
-        led_strip_show(&led_strip);
 
-        led_color.red += 5;
-        vTaskDelay(30 / portTICK_PERIOD_MS);
-#else
 			loop(&led_strip);
-#endif
 		}
     return 0;
 }

@@ -16,6 +16,7 @@ int main()
  
  return 0;
 }
+Note the variables *CONFIG_LED_STRIP_NUM_PIXELS*, *CONFIG_LED_STRIP_GPIO_PIN*. etc which have been created by `make menuconfig` per the main/Kconfig.projbuild file.
 ````
 Then create a function called 'main':":
 ````C
