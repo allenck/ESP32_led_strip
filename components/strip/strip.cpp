@@ -36,7 +36,11 @@ Color::Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t white)
  uint8_t Color::blue() {return val&0xff;}
  uint8_t Color::white() {return (val&0xff000000) >> 24;}
 
-
+clock_t millis()
+{
+ clock_t t = clock() / (CLOCKS_PER_SEC / 1000);
+ return t;
+}
 /*
  * Constructor when length, pin and type are known at compile-time. 
 */
@@ -239,7 +243,7 @@ bool Strip::show()
 /*static*/ void Strip::led_strip_fill_rmt_items_ws2812(uint32_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset)
 {
 		ESP_LOGI("led_strip_fill_rmt_items_ws2812", "begin w%dr%db%dg%d ",wOffset, rOffset,gOffset, bOffset );
-    ESP_LOG_BUFFER_HEXDUMP(" begin buf", led_strip_buf, led_strip_length* sizeof(uint32_t), ESP_LOG_INFO);
+    ESP_LOG_BUFFER_HEXDUMP(" begin buf", led_strip_buf, led_strip_length* sizeof(uint32_t), ESP_LOG_DEBUG);
     
     uint32_t rmt_items_index = 0;
     
@@ -310,8 +314,8 @@ bool Strip::setPixelColor(uint32_t pixel_num, uint32_t  color)
 bool Strip::clear()
 {
 		ESP_LOGI(TAG, "begin clear");
-    ESP_LOG_BUFFER_HEXDUMP("buf1", buf1, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
-    ESP_LOG_BUFFER_HEXDUMP("buf2", buf2, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
+    //ESP_LOG_BUFFER_HEXDUMP("buf1", buf1, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
+    //ESP_LOG_BUFFER_HEXDUMP("buf2", buf2, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
     bool success = true;
 
     if (showingBuf1) {
@@ -323,3 +327,163 @@ bool Strip::clear()
     return success;
 }
 
+bool Strip::getPixelColor(uint32_t pixel_num, uint32_t color)
+{
+    bool get_success = true;
+
+    if ((pixel_num > _numPixels) ||
+        (!color)) {
+        color = NULL;
+        return false;
+    }
+
+    if (showingBuf1) {
+        color = buf1[pixel_num];
+    } else {
+        color = buf2[pixel_num];
+    }
+
+    return get_success;
+}
+
+/*!
+    @brief   An 8-bit gamma-correction function for basic pixel brightness
+             adjustment. Makes color transitions appear more perceptially
+             correct.
+    @param   x  Input brightness, 0 (minimum or off/black) to 255 (maximum).
+    @return  Gamma-adjusted brightness, can then be passed to one of the
+             setPixelColor() functions. This uses a fixed gamma correction
+             exponent of 2.6, which seems reasonably okay for average
+             NeoPixels in average tasks. If you need finer control you'll
+             need to provide your own gamma-correction function instead.
+  */
+uint8_t    Strip::gamma8(uint8_t x) {
+    //ESP_LOGI(TAG, "gamma in = %d, out = %d", (int)x, (int)(_NeoPixelGammaTable[x]));
+    return /*pgm_read_byte*/(_NeoPixelGammaTable[x]); // 0-255 in, 0-255 out
+}
+
+/*!
+  @brief   Fill all or part of the NeoPixel strip with a color.
+  @param   c      32-bit color value. Most significant byte is white (for
+                  RGBW pixels) or ignored (for RGB pixels), next is red,
+                  then green, and least significant byte is blue. If all
+                  arguments are unspecified, this will be 0 (off).
+  @param   first  Index of first pixel to fill, starting from 0. Must be
+                  in-bounds, no clipping is performed. 0 if unspecified.
+  @param   count  Number of pixels to fill, as a positive value. Passing
+                  0 or leaving unspecified will fill to end of strip.
+*/
+void Strip::fill(uint32_t c, uint16_t first, uint16_t count) {
+  uint16_t i, end;
+
+  if(first >= _numPixels) {
+    return; // If first LED is past end of strip, nothing to do
+  }
+
+  // Calculate the index ONE AFTER the last pixel to fill
+  if(count == 0) {
+    // Fill to end of strip
+    end = _numPixels;
+  } else {
+    // Ensure that the loop won't go past the last pixel
+    end = first + count;
+    if(end > _numPixels) end = _numPixels;
+  }
+
+  
+  for(i = first; i < end; i++) {
+   setPixelColor(i, c);
+  }
+}
+
+uint32_t Strip::ColorHSV(uint16_t hue, uint8_t sat, uint8_t val) {
+
+ uint8_t r, g, b;
+ // Remap 0-65535 to 0-1529. Pure red is CENTERED on the 64K rollover;
+  // 0 is not the start of pure red, but the midpoint...a few values above
+  // zero and a few below 65536 all yield pure red (similarly, 32768 is the
+  // midpoint, not start, of pure cyan). The 8-bit RGB hexcone (256 values
+  // each for red, green, blue) really only allows for 1530 distinct hues
+  // (not 1536, more on that below), but the full unsigned 16-bit type was
+  // chosen for hue so that one's code can easily handle a contiguous color
+  // wheel by allowing hue to roll over in either direction.
+  hue = (hue * 1530L + 32768) / 65536;
+  // Because red is centered on the rollover point (the +32768 above,
+  // essentially a fixed-point +0.5), the above actually yields 0 to 1530,
+  // where 0 and 1530 would yield the same thing. Rather than apply a
+  // costly modulo operator, 1530 is handled as a special case below.
+
+  // So you'd think that the color "hexcone" (the thing that ramps from
+  // pure red, to pure yellow, to pure green and so forth back to red,
+  // yielding six slices), and with each color component having 256
+  // possible values (0-255), might have 1536 possible items (6*256),
+  // but in reality there's 1530. This is because the last element in
+  // each 256-element slice is equal to the first element of the next
+  // slice, and keeping those in there this would create small
+  // discontinuities in the color wheel. So the last element of each
+  // slice is dropped...we regard only elements 0-254, with item 255
+  // being picked up as element 0 of the next slice. Like this:
+  // Red to not-quite-pure-yellow is:        255,   0, 0 to 255, 254,   0
+  // Pure yellow to not-quite-pure-green is: 255, 255, 0 to   1, 255,   0
+  // Pure green to not-quite-pure-cyan is:     0, 255, 0 to   0, 255, 254
+  // and so forth. Hence, 1530 distinct hues (0 to 1529), and hence why
+  // the constants below are not the multiples of 256 you might expect.
+
+  // Convert hue to R,G,B (nested ifs faster than divide+mod+switch):
+  if(hue < 510) {         // Red to Green-1
+    b = 0;
+    if(hue < 255) {       //   Red to Yellow-1
+      r = 255;
+      g = hue;            //     g = 0 to 254
+    } else {              //   Yellow to Green-1
+      r = 510 - hue;      //     r = 255 to 1
+      g = 255;
+    }
+  } else if(hue < 1020) { // Green to Blue-1
+    r = 0;
+    if(hue <  765) {      //   Green to Cyan-1
+      g = 255;
+      b = hue - 510;      //     b = 0 to 254
+    } else {              //   Cyan to Blue-1
+      g = 1020 - hue;     //     g = 255 to 1
+      b = 255;
+    }
+  } else if(hue < 1530) { // Blue to Red-1
+    g = 0;
+    if(hue < 1275) {      //   Blue to Magenta-1
+      r = hue - 1020;     //     r = 0 to 254
+      b = 255;
+    } else {              //   Magenta to Red-1
+      r = 255;
+      b = 1530 - hue;     //     b = 255 to 1
+    }
+  } else {                // Last 0.5 Red (quicker than % operator)
+    r = 255;
+    g = b = 0;
+  }
+
+  // Apply saturation and value to R,G,B, pack into 32-bit result:
+  uint32_t v1 =   1 + val; // 1 to 256; allows >>8 instead of /255
+  uint16_t s1 =   1 + sat; // 1 to 256; same reason
+  uint8_t  s2 = 255 - sat; // 255 to 0
+  return ((((((r * s1) >> 8) + s2) * v1) & 0xff00) << 8) |
+          (((((g * s1) >> 8) + s2) * v1) & 0xff00)       |
+         ( ((((b * s1) >> 8) + s2) * v1)           >> 8);
+}
+
+// A 32-bit variant of gamma8() that applies the same function
+// to all components of a packed RGB or WRGB value.
+uint32_t Strip::gamma32(uint32_t x) {
+  uint8_t *y = (uint8_t *)&x;
+  // All four bytes of a 32-bit value are filtered even if RGB (not WRGB),
+  // to avoid a bunch of shifting and masking that would be necessary for
+  // properly handling different endianisms (and each byte is a fairly
+  // trivial operation, so it might not even be wasting cycles vs a check
+  // and branch for the RGB case). In theory this might cause trouble *if*
+  // someone's storing information in the unused most significant byte
+
+  // of an RGB value, but this seems exceedingly rare and if it's
+  // encountered in reality they can mask values going in or coming out.
+  for(uint8_t i=0; i<4; i++) y[i] = gamma8(y[i]);
+  return x; // Packed 32-bit return
+}
