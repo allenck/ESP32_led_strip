@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define LED_STRIP_TASK_SIZE             (4096*2)
+#define LED_STRIP_TASK_SIZE             (4096)
 #define LED_STRIP_TASK_PRIORITY         (configMAX_PRIORITIES - 1)
 
 #define LED_STRIP_REFRESH_PERIOD_MS     (30U) // TODO: add as parameter to led_strip_init
@@ -27,14 +27,14 @@
 
 Color::Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t white)
 {
- val = white << 24 | red << 16 | green << 8 | blue;
+ val = ((uint32_t)white << 24) | ((uint32_t)red << 16) | ((uint32_t)green << 8) | blue;
 }
  Color::Color(uint32_t c) {}
  uint32_t Color::value() {return val;}
- uint8_t Color::red() {return val&0xff0000 >> 16;}
- uint8_t Color::green() {return val&0xff00 >> 8;}
+ uint8_t Color::red() {return (val&0xff0000) >> 16;}
+ uint8_t Color::green() {return (val&0xff00) >> 8;}
  uint8_t Color::blue() {return val&0xff;}
- uint8_t Color::white() {return val&0xff000000 >> 24;}
+ uint8_t Color::white() {return (val&0xff000000) >> 24;}
 
 
 /*
@@ -51,10 +51,12 @@ Strip::Strip(uint16_t n, uint8_t p, NeoPixelType t, uint8_t ch)
 bool Strip::begin()
 {
 	ESP_LOGI(TAG, "begin begin");
- 	uint32_t b1[_numPixels];
-  buf1 = b1;
-  uint32_t b2[_numPixels];
-  buf2 = b2;
+ 	//uint32_t b1[_numPixels];
+  //buf1 = b1; 
+  buf1 = (uint32_t*) malloc(sizeof(uint32_t)* _numPixels);
+  //uint32_t b2[_numPixels];
+  //buf2 = b2;
+  buf2 = (uint32_t*) malloc(sizeof(uint32_t)* _numPixels);
   showingBuf1 = false;
   access_semaphore = xSemaphoreCreateBinary();
 	wOffset = (neoPixelType >> 6) & 0b11; // See notes in header file
@@ -77,7 +79,7 @@ bool Strip::begin()
                                         "led_strip_task",
                                         LED_STRIP_TASK_SIZE,
                                         this,
-                                        LED_STRIP_TASK_PRIORITY,
+                                        +6, //LED_STRIP_TASK_PRIORITY,
                                         &led_strip_task_handle
                                      );
 
@@ -85,7 +87,9 @@ bool Strip::begin()
    ESP_LOGI(TAG, "esp_strip_task not created");
       return false;
   }
-  
+  ESP_LOG_BUFFER_HEXDUMP("begin(e) buf1", buf1, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
+  ESP_LOG_BUFFER_HEXDUMP("begin(e) buf2", buf2, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
+
   ESP_LOGI(TAG, "begin end");
   return true;
 }
@@ -147,13 +151,13 @@ bool Strip::show()
     showingBuf1 = true;
     if(bClearOnShow)
 			memset(buf2, 0, sizeof(uint32_t) * _numPixels);
-  else
+  	else
     {
      memcpy(buf2, buf1, sizeof(uint32_t) * _numPixels);
 		}
   }
-  ESP_LOG_BUFFER_HEXDUMP("buf1", buf1, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
-  ESP_LOG_BUFFER_HEXDUMP("buf2", buf2, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
+  //ESP_LOG_BUFFER_HEXDUMP("buf1", buf1, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
+  //ESP_LOG_BUFFER_HEXDUMP("buf2", buf2, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
 	xSemaphoreGive(access_semaphore);
 
 	ESP_LOGI("show", "end");
@@ -234,7 +238,7 @@ bool Strip::show()
 
 /*static*/ void Strip::led_strip_fill_rmt_items_ws2812(uint32_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset)
 {
-		ESP_LOGI("led_strip_fill_rmt_items_ws2812", "begin");
+		ESP_LOGI("led_strip_fill_rmt_items_ws2812", "begin w%dr%db%dg%d ",wOffset, rOffset,gOffset, bOffset );
     ESP_LOG_BUFFER_HEXDUMP(" begin buf", led_strip_buf, led_strip_length* sizeof(uint32_t), ESP_LOG_INFO);
     
     uint32_t rmt_items_index = 0;
@@ -242,7 +246,7 @@ bool Strip::show()
     
     for (uint32_t led_index = 0; led_index < led_strip_length; led_index++) {
         uint32_t led_color = led_strip_buf[led_index];
-        uint8_t bytes[4]= {(uint8_t)(led_color&0xff0000)>>16, (uint8_t)(led_color&0xff00)>>8, (uint8_t)(led_color&0xff), (uint8_t)(led_color&0xff)>>24};
+        uint8_t bytes[4]= {(uint8_t)((led_color&0xff0000)>>16), (uint8_t)((led_color&0xff00)>>8), (uint8_t)(led_color&0xff), (uint8_t)((led_color&0xff)>>24)};
         for (uint8_t bit = 8; bit != 0; bit--) {
             uint8_t bit_set = (bytes[wOffset] >> (bit - 1)) & 1;
             if(bit_set) {
@@ -283,7 +287,7 @@ bool Strip::show()
 		      }
        }
     }
-    ESP_LOG_BUFFER_HEXDUMP(" end buf", led_strip_buf, led_strip_length* sizeof(uint32_t), ESP_LOG_INFO);
+    //ESP_LOG_BUFFER_HEXDUMP(" end buf", led_strip_buf, led_strip_length* sizeof(uint32_t), ESP_LOG_INFO);
 		ESP_LOGI("led_strip_fill_rmt_items_ws2812", "end");	
 }
 

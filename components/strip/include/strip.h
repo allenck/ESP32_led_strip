@@ -142,20 +142,13 @@ class Strip
 	 uint8_t bOffset;    ///< Index of blue byte
 	 uint8_t wOffset;    ///< Index of white (==rOffset if no white)
 	 bool hasWhite = false;
-   bool bClearOnShow=true;
+   bool bClearOnShow=false;
    void* led_strip_task_handle = NULL;
 	 
 	 bool init_rmt();
    static void led_strip_task(void *arg);
 	 static void led_strip_fill_rmt_items_ws2812(uint32_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset);
-	 static inline void led_strip_rmt_bit_0_ws2812(rmt_item32_t* item)
-	 {
-		  Strip::led_strip_fill_item_level(item, LED_STRIP_RMT_TICKS_BIT_0_HIGH_WS2812, LED_STRIP_RMT_TICKS_BIT_0_LOW_WS2812);
-	 }
-	 static inline void led_strip_rmt_bit_1_ws2812(rmt_item32_t* item)
-	 {
-    Strip::led_strip_fill_item_level(item, LED_STRIP_RMT_TICKS_BIT_1_HIGH_WS2812, LED_STRIP_RMT_TICKS_BIT_1_LOW_WS2812);
-   }
+	 
    static inline void led_strip_fill_item_level(rmt_item32_t* item, int high_ticks, int low_ticks)
 	 {
 		  item->level0 = 1;
@@ -163,6 +156,13 @@ class Strip
 		  item->level1 = 0;
 		  item->duration1 = low_ticks;
 	 }
-
+	 static inline void led_strip_rmt_bit_0_ws2812(rmt_item32_t* item)
+	 {
+		  led_strip_fill_item_level(item, LED_STRIP_RMT_TICKS_BIT_0_HIGH_WS2812, LED_STRIP_RMT_TICKS_BIT_0_LOW_WS2812);
+	 }
+	 static inline void led_strip_rmt_bit_1_ws2812(rmt_item32_t* item)
+	 {
+    led_strip_fill_item_level(item, LED_STRIP_RMT_TICKS_BIT_1_HIGH_WS2812, LED_STRIP_RMT_TICKS_BIT_1_LOW_WS2812);
+   }
 };
 #endif
