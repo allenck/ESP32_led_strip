@@ -214,7 +214,7 @@ struct led_strip_t {
 };
 
 clock_t millis();
-
+void delay(int d);
 
 bool led_strip_init(struct led_strip_t *led_strip);
 

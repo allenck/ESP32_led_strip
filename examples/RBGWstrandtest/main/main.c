@@ -43,8 +43,7 @@ int app_main(void)
 
      struct led_strip_t led_strip = {
         .rgb_led_type = NEO_RGB,
-        .rmt_channel = RMT_CHANNEL_1,
-        /*.rmt_interrupt_num = LED_STRIP_RMT_INTR_NUM,*/
+        .rmt_channel = CONFIG_RMT_CHANNEL,
         .gpio = CONFIG_LED_STRIP_GPIO_PIN,
         .led_strip_buf_1 = led_strip_buf_1,
         .led_strip_buf_2 = led_strip_buf_2,
@@ -121,7 +120,7 @@ void colorWipe(struct led_strip_t* led_strip, struct led_color_t* color, int wai
   for(int i=0; i<LED_STRIP_LENGTH; i++) { // For each pixel in strip...
 		led_strip_set_pixel_color(led_strip, i, color); //  Set pixel's color (in RAM)
     led_strip_show(led_strip);                      //  Update strip to match
-    vTaskDelay(wait);                               //  Pause for a moment
+    delay(wait);           //  Pause for a moment
   }
 }
 
@@ -183,13 +182,13 @@ void pulseWhite(struct led_strip_t* led_strip, uint8_t wait) {
     // Fill entire strip with white at gamma-corrected brightness level 'j':
     fill(led_strip, Color(gamma8(j),gamma8(j),gamma8(j),0),0,0);
     led_strip_show(led_strip);
-    vTaskDelay(wait);
+    delay(wait);
   }
   ESP_LOGI(TAG, "ramp down pulseWhite");
   for(int j=255; j>=0; j--) { // Ramp down from 255 to 0
         fill(led_strip, Color(gamma8(j),gamma8(j),gamma8(j),0),0,0);
     led_strip_show(led_strip);
-    vTaskDelay(wait);
+    delay(wait);
   }
   ESP_LOGI(TAG, "end pulseWhite");
 }
@@ -222,7 +221,7 @@ void rainbowFade2White(struct led_strip_t* led_strip, int wait, int rainbowLoops
     }
 
     led_strip_show(led_strip);
-    vTaskDelay(wait);
+    delay(wait);
 
     if(firstPixelHue < 65536) {                              // First loop,
       if(fadeVal < fadeMax) fadeVal++;                       // fade in
@@ -239,14 +238,14 @@ void rainbowFade2White(struct led_strip_t* led_strip, int wait, int rainbowLoops
  			fill(led_strip, Color(0,gamma8(j),gamma8(j),gamma8(j)),0,0);
       led_strip_show(led_strip);
     }
-    vTaskDelay(1000); // Pause 1 second
+    delay(1000); // Pause 1 second
     for(int j=255; j>=0; j--) { // Ramp down 255 to 0
       fill(led_strip, Color(0,gamma8(j),gamma8(j),gamma8(j)),0,0);
       led_strip_show(led_strip);
     }
   }
 
-  vTaskDelay(500); // Pause 1/2 second
+  delay(500); // Pause 1/2 second
 }
 
 // Theater-marquee-style chasing lights. Pass in a color (32-bit value,
@@ -264,7 +263,7 @@ ESP_LOGI(TAG, "begin TheaterChase");
         led_strip_set_pixel_color(led_strip, c, &color_s); // Set pixel 'c' to value 'color'
       }
       led_strip_show(led_strip); // Update strip with new contents
-      vTaskDelay(wait);  // Pause for a moment
+      delay(wait);  // Pause for a moment
     }
   }
 }
@@ -292,7 +291,7 @@ void rainbow(struct led_strip_t* led_strip, int wait) {
       led_strip_set_pixel_color(led_strip, i, &color_s);
     }
     led_strip_show(led_strip); // Update strip with new contents
-    vTaskDelay(wait);  // Pause for a moment
+    delay(wait);  // Pause for a moment
   }
 }
 
@@ -314,7 +313,7 @@ void theaterChaseRainbow(struct led_strip_t* led_strip, int wait) {
 				led_strip_set_pixel_color(led_strip, c, &color_s); // Set pixel 'c' to value 'color'
       }
       led_strip_show(led_strip);                // Update strip with new contents
-      vTaskDelay(wait);                 // Pause for a moment
+      delay(wait);                 // Pause for a moment
       firstPixelHue += 65536 / 90; // One cycle of color wheel over 90 frames
     }
   }

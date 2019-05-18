@@ -45,6 +45,8 @@ clock_t millis()
  return t;
 }
 
+void delay(int d) { vTaskDelay(d / portTICK_PERIOD_MS);}
+
 // Function pointer for generating waveforms based on different LED drivers
 typedef void (*led_fill_rmt_items_fn)(struct led_color_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset);
 
@@ -176,7 +178,7 @@ static void led_strip_task(void *arg)
         vTaskDelay(LED_STRIP_REFRESH_PERIOD_MS / portTICK_PERIOD_MS);
     }
 
-    if (!rmt_items) {
+    if (rmt_items) {
         free(rmt_items);
     }
     vTaskDelete(NULL);
