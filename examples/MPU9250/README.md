@@ -57,4 +57,18 @@ void loop(struct led_strip_t* led_strip) {
   .
 }
 These display functions are modeled on similar functions in the Adafruit NeoPixel library. In most cases they require an additional parameter specifying a led_strip_t pointer.
+
+# Prerequisites
+To support the MPU9250 3 axis sensor, https://github.com/natanaeljr/esp32-MPU-driver  must be installed. These modules must be downloaded into the components directory. ![MPU driver API](https://natanaeljr.github.io/esp32-MPU-driver/html/index.html) This library also requires either the I2Cbus or SPIbus be present in $(home)/esl/libraries.
+```
+git clone https://github.com/natanaeljr/esp32-MPU-driver.git
+```
+
+MPU driver depends on the following protocol libraries to communicate with the chip with ease: [ I2Cbus | SPIbus ].
+You must download the one according to the protocol you'll use and place within your components directory as well.
+```
+I2Cbus:  git clone https://github.com/natanaeljr/esp32-I2Cbus.git I2Cbus
+SPIbus:  git clone https://github.com/natanaeljr/esp32-SPIbus.git SPIbus
+```
+
 ````

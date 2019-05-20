@@ -1,4 +1,4 @@
-menu "ESP32_led_strip RBGWstrandtest Configuration"
+menu "ESP32_led_strip MPU9250 Configuration"
 
 config LED_STRIP_GPIO_PIN
     int "Pin controlling LED strip"

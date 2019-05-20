@@ -147,10 +147,11 @@ static const uint8_t /*PROGMEM*/ _NeoPixelGammaTable[256] = {
   218,220,223,225,227,230,232,235,237,240,242,245,247,250,252,255};
 clock_t millis();
 inline void delay(uint32_t d) { vTaskDelay(d / portTICK_PERIOD_MS);}
-void loop();
+//void loop();
 
 // Function pointer for generating waveforms based on different LED drivers
-	typedef void (*led_fill_rmt_items_fn)(uint32_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset);
+typedef void (*led_fill_rmt_items_fn)(uint32_t *led_strip_buf, rmt_item32_t *rmt_items, uint32_t led_strip_length, uint8_t wOffset, uint8_t rOffset,uint8_t gOffset,uint8_t bOffset);
+
 
 typedef uint8_t  NeoPixelType; ///< 3rd arg to Adafruit_NeoPixel constructor
 class Color
@@ -171,7 +172,7 @@ class Color
 class Strip
 {
  public:
-	 Strip(uint16_t n, uint8_t p=17, NeoPixelType t=NEO_GRB+NEO_KHZ800, uint8_t ch=0);
+	 Strip(uint16_t n, uint8_t p=17, NeoPixelType t=NEO_GRB+NEO_KHZ800, uint8_t ch = 0);
 	 bool begin();
 	 bool show();
 	 bool clearOnShow();
@@ -197,7 +198,7 @@ class Strip
 	 uint8_t gpio = 0;
 	 NeoPixelType neoPixelType = 0;
 	 uint8_t rmtChannel = 0;
-	 SemaphoreHandle_t access_semaphore;
+   SemaphoreHandle_t access_semaphore;
 	 uint8_t rOffset;    ///< Red index within each 3- or 4-byte pixel
 	 uint8_t gOffset;    ///< Index of green byte
 	 uint8_t bOffset;    ///< Index of blue byte

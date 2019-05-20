@@ -50,6 +50,7 @@ Strip::Strip(uint16_t n, uint8_t p, NeoPixelType t, uint8_t ch)
  gpio = p;
  neoPixelType = t;
  rmtChannel = ch;
+ 
 }
 
 bool Strip::begin()
@@ -94,11 +95,7 @@ bool Strip::begin()
   ESP_LOG_BUFFER_HEXDUMP("begin(e) buf1", buf1, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
   ESP_LOG_BUFFER_HEXDUMP("begin(e) buf2", buf2, sizeof(uint32_t) * _numPixels, ESP_LOG_INFO);
 
-	while(true)
-  {
-   loop();
-  }
-  ESP_LOGI(TAG, "begin end");
+	ESP_LOGI(TAG, "begin end");
   return true;
 }
 
@@ -178,6 +175,7 @@ bool Strip::show()
   Strip* strip = (Strip*)arg;  
     
   led_fill_rmt_items_fn led_make_waveform = NULL;
+  
     bool make_new_rmt_items = true;
     bool prev_showing_buf_1 = !strip->showingBuf1;
 

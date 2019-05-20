@@ -1,7 +1,7 @@
 # ESP32_led_strip
 This library can be used to drive addressable LED strips from the ESP32 using the RMT peripheral. This allows the RMT peripheral to handle all of the transmission while the processor is free to support other tasks.
 
-The library is based on [Lucas Bruder's project ](https://github.com/Lucas-Bruder/ESP32_LED_STRIP) and the example borrows fro[Arduino Adafruit_Neopixel](https://github.com/adafruit/Adafruit_NeoPixel) library.
+The library is based on [Lucas Bruder's project ](https://github.com/Lucas-Bruder/ESP32_LED_STRIP) and the example borrows from [Arduino Adafruit_Neopixel](https://github.com/adafruit/Adafruit_NeoPixel) library.
 
 Several enhancements have been made to the original project. These include:
 
@@ -9,11 +9,11 @@ Several enhancements have been made to the original project. These include:
 2. options such as gpio pin number and RMT channel number have been added to a KConfig file so that 'make menuconfig' can be used to set the options. 
 3. A new option allows the user to specify whether the WS2812 leds are RGB or RGBW and to specify the order that bytes will be transmitted. 
 4. An example app has been provided that offers a number of display schemes borrowed from the Adafruit NeoPixel library.
-5. I am working on some C++ classes that can be used alternatively. 
+5. A C++ version of led_strip is the 'Strip' C++ class. include "strip.h"
 6. The original project cleared the buffers after *show()*. A global variable is now included to save the buffer after use. This is the way that the Adafruit NeoPixel library works.  
 
 
-The library currently uses double buffering to separate the LED strip that's being currently displayed and the LED strip that is currently being updated. There are two buffers, 1 and 2, which contain the colors for the LED strip. When the driver is showing buffer 1, any calls to led_strip_set_pixel_color will update buffer 2. When a call to led_strip_show is made, it will switch out the buffers, so buffer 2 is currently being displayed and buffer 1 is the one that is written to when calls to led_strip_set_pixel_color are made.
+The  C library (led_strip) currently uses double buffering to separate the LED strip that's being currently displayed and the LED strip that is currently being updated. There are two buffers, 1 and 2, which contain the colors for the LED strip. When the driver is showing buffer 1, any calls to led_strip_set_pixel_color will update buffer 2. When a call to led_strip_show is made, it will switch out the buffers, so buffer 2 is currently being displayed and buffer 1 is the one that is written to when calls to led_strip_set_pixel_color are made.
 
 ## How to use
 All functions for initializing and setting colors are located in led_strip.h. Right now the library supports:
