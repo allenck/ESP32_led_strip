@@ -39,7 +39,7 @@ void theaterChaseRainbow(struct led_strip_t* led_strip, int wait);
 
 int app_main(void)
 {
-    //nvs_flash_in;
+    //nvs_flash_init;
 
      struct led_strip_t led_strip = {
         .rgb_led_type = NEO_RGB,
