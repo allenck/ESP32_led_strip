@@ -84,8 +84,8 @@ extern "C" void app_main() {
     MPU.setAuxI2CEnabled(true); // needed for compass
     Strip strip = Strip(22, 22, NEO_RGB, 0);
     strip.begin();
-    uint16_t min[3] = {0, 0,0};
-    uint16_t max[3] = {0, 0,0};
+    int16_t min[3] = {-1, -1,-1};
+    int16_t max[3] = {1, 1,1};
     while (true) {
         // Read
 #if 0
@@ -108,10 +108,10 @@ extern "C" void app_main() {
 				if(y > max[1]) max[1] = y;
 				if(z < min[2]) min[2] = z;
 				if(z > max[2]) max[2] = z;
-        uint16_t range[3];
-        range[0] = max[0]=min[0];
-				range[1] = max[1]=min[1];
-				range[2] = max[2]=min[2];
+        int16_t range[3];
+        range[0] = max[0]-min[0];
+				range[1] = max[1]-min[1];
+				range[2] = max[2]-min[2];
         if(range[0] == 0 || range[1] == 0 || range[2] == 0) continue;
         uint32_t c = ((((x-min[0])*256)/range[0])&0xff) << 16 | ((((y-min[1])*256)/range[1])&0xff) << 8 | ((((z-min[2])*256)/range[2] )&0xff);
         printf("heading: x:%d(%u), y:%d(%u), z:%d(%u)\n", x,(c&0xff0000)>>16,y,(c&0xff00)>>8,z, c&0xff);
